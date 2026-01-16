@@ -70,6 +70,7 @@
                 <option value="3">3 Words (Highlight 1 by 1, others 50% opacity)</option>
                 <option value="4">4 Words (Highlight 1 by 1, others 50% opacity)</option>
                 <option value="5">5 Words (Highlight 1 by 1, others 50% opacity)</option>
+                <option value="random">★ RANDOM TYPE (Changes word count randomly)</option>
             </select>
 
             <label>4. Files:</label>
@@ -139,6 +140,7 @@
     function doSync() {
         if (currentIdx < sentences.length) {
             timings.push({
+                index: currentIdx,
                 words: sentences[currentIdx].split(' ').filter(w => w.length > 0),
                 start: lastTime,
                 end: audio.currentTime
@@ -171,20 +173,17 @@
     async function startRendering() {
         const mode = styleSelect.value;
         const chosenFont = fontSelect.value;
-        const subType = parseInt(subTypeSelect.value);
+        const rawSubType = subTypeSelect.value;
 
         // --- AUDIO CAPTURE LOGIC ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
         const dest = audioCtx.createMediaStreamDestination();
         
-        // Connect audio to both: the recorder AND the speakers
         source.connect(dest);
         source.connect(audioCtx.destination);
 
         const videoStream = canvas.captureStream(30);
-        
-        // COMBINE Video Track + Audio Track
         const combinedStream = new MediaStream([
             ...videoStream.getVideoTracks(),
             ...dest.stream.getAudioTracks()
@@ -217,6 +216,15 @@
             const active = timings.find(t => now >= t.start && now <= t.end);
             
             if (active) {
+                // Determine current subtype based on selection or randomness
+                let subType;
+                if (rawSubType === 'random') {
+                    // Logic to make "Random" stable per sentence but different across the song
+                    subType = (active.index % 3) + 2; // Cycles between 2, 3, 4 words
+                } else {
+                    subType = parseInt(rawSubType);
+                }
+
                 let fontSize = (subType === 1) ? 220 : 160;
                 const totalWords = active.words.length;
                 const progressInLine = (now - active.start) / (active.end - active.start);

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+    <meta charset="UTF-8">
+    <title>Odia 3D Pro - Font & Color Selection</title>
+    <!-- Default Unicode Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Loading Local Fonts */
+        @font-face {
+            font-family: 'Abhimanyu';
+            src: url('Abhimanyu.ttf');
+        }
+        @font-face {
+            font-family: 'Mahadev';
+            src: url('Mahadev.otf');
+        }
+        @font-face {
+            font-family: 'Samaleswari';
+            src: url('4- samaleswari.ttf');
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        
+        .setup-section { text-align: left; background: #334155; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #94a3b8; font-size: 14px; }
+        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; margin-bottom: 15px; box-sizing: border-box; }
+
+        #syncArea { display: none; padding: 20px; }
+        .tap-btn { 
+            background: linear-gradient(135deg, #f59e0b, #d97706); padding: 60px; font-size: 26px; border-radius: 15px; 
+            cursor: pointer; font-weight: bold; border: none; width: 100%; color: white;
+            box-shadow: 0 6px 0 #92400e; margin-bottom: 20px; transition: 0.1s;
+        }
+        .tap-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e; }
+
+        #renderArea { display: none; margin-top: 20px; background: #000; border-radius: 15px; padding: 15px; border: 2px solid #00ff00; }
+        canvas { background: #00FF00; width: 100%; border-radius: 10px; display: block; }
+        
+        .progress-container { width: 100%; background: #334155; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        #progressBar { width: 0%; height: 100%; background: #00ff00; transition: 0.1s; }
+
+        .btn-blue { background: #3b82f6; color: white; padding: 16px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-blue:disabled { background: #475569; cursor: not-allowed; }
+        #currentSentence { font-size: 24px; color: #fbbf24; min-height: 60px; margin: 15px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="color:#00ff00; margin-top: 0;">Odia 3D Karaoke Pro</h1>
+    
+    <div id="setup">
+        <div class="setup-section">
+            <label>1. Select Odia Font:</label>
+            <select id="fontSelect">
+                <option value="'Noto Sans Odia'">Default (Noto Sans)</option>
+                <option value="Abhimanyu">Abhimanyu</option>
+                <option value="Mahadev">Mahadev</option>
+                <option value="Samaleswari">Samaleswari</option>
+            </select>
+
+            <label>2. Select 3D Color Style:</label>
+            <select id="styleSelect">
+                <option value="mix">★ RANDOM MIX (Color per Word)</option>
+                <option value="#FFFFFF">3D Pure White</option>
+                <option value="#FFD700">3D Royal Gold</option>
+                <option value="#00FFFF">3D Electric Cyan</option>
+                <option value="#FF00FF">3D Hot Pink</option>
+                <option value="#FF3131">3D Bright Red</option>
+                <option value="#FF8C00">3D Deep Orange</option>
+                <option value="#A020F0">3D Vivid Purple</option>
+                <option value="#E0E0E0">3D Platinum Silver</option>
+            </select>
+
+            <label>3. Files:</label>
+            <input type="file" id="audioIn" accept="audio/*">
+            <input type="file" id="textIn" accept=".txt">
+        </div>
+        <button id="startSync" class="btn-blue" disabled>START SYNCING</button>
+    </div>
+
+    <div id="syncArea">
+        <div id="currentSentence">...</div>
+        <button class="tap-btn" id="tapBtn">TAP AT END OF LINE<br><small>(or Spacebar)</small></button>
+    </div>
+
+    <div id="renderArea">
+        <div style="color:#00ff00; font-weight:bold; margin-bottom:10px;">● RENDERING & RECORDING...</div>
+        <canvas id="mainCanvas" width="1920" height="1080"></canvas>
+        <div class="progress-container"><div id="progressBar"></div></div>
+        <div id="percentText">0% Completed</div>
+    </div>
+</div>
+
+<audio id="audioElement"></audio>
+
+<script>
+    const audio = document.getElementById('audioElement');
+    const styleSelect = document.getElementById('styleSelect');
+    const fontSelect = document.getElementById('fontSelect');
+    const startSync = document.getElementById('startSync');
+    const tapBtn = document.getElementById('tapBtn');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const progressBar = document.getElementById('progressBar');
+    const percentText = document.getElementById('percentText');
+
+    let sentences = [];
+    let timings = [];
+    let currentIdx = 0;
+    let lastTime = 0;
+    const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0", "#E0E0E0"];
+
+    const validate = () => { if(audioIn.files[0] && textIn.files[0]) startSync.disabled = false; };
+    audioIn.onchange = validate; textIn.onchange = validate;
+
+    startSync.onclick = async () => {
+        const text = await textIn.files[0].text();
+        sentences = text.split(/[।\n]+/).map(s => s.trim()).filter(s => s.length > 1);
+        audio.src = URL.createObjectURL(audioIn.files[0]);
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('syncArea').style.display = 'block';
+        audio.play();
+        updateUI();
+    };
+
+    function updateUI() {
+        if (currentIdx < sentences.length) {
+            document.getElementById('currentSentence').innerText = sentences[currentIdx];
+            // Apply font to preview
+            document.getElementById('currentSentence').style.fontFamily = fontSelect.value;
+        } else {
+            document.getElementById('syncArea').style.display = 'none';
+            document.getElementById('renderArea').style.display = 'block';
+            startRendering();
+        }
+    }
+
+    function doSync() {
+        if (currentIdx < sentences.length) {
+            timings.push({
+                words: sentences[currentIdx].split(' ').filter(w => w.length > 0),
+                start: lastTime,
+                end: audio.currentTime
+            });
+            lastTime = audio.currentTime;
+            currentIdx++;
+            updateUI();
+        }
+    }
+
+    tapBtn.onclick = doSync;
+    window.onkeydown = (e) => { if(e.code === 'Space') { e.preventDefault(); doSync(); } };
+
+    function draw3D(text, color, font) {
+        const x = canvas.width / 2;
+        const y = canvas.height / 2;
+        
+        // Set the chosen font
+        ctx.font = `900 220px ${font}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+
+        // 1. Bottom Shadow
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 40;
+        ctx.strokeText(text, x, y + 15);
+
+        // 2. Main Outline
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 35;
+        ctx.strokeText(text, x, y);
+
+        // 3. Colored Body
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
+    }
+
+    async function startRendering() {
+        const mode = styleSelect.value;
+        const chosenFont = fontSelect.value;
+        const audioCtx = new AudioContext();
+        const source = audioCtx.createMediaElementSource(audio);
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(dest);
+        source.connect(audioCtx.destination);
+
+        const videoStream = canvas.captureStream(30);
+        const combined = new MediaStream([...videoStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+        const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9' });
+        const chunks = [];
+
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `odia_3d_karaoke.webm`;
+            a.click();
+            audioCtx.close();
+        };
+
+        audio.currentTime = 0;
+        recorder.start();
+        audio.play();
+
+        function renderLoop() {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = progress + '%';
+            percentText.innerText = Math.round(progress) + '% Completed';
+
+            ctx.fillStyle = '#00FF00';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const now = audio.currentTime;
+            const active = timings.find(t => now >= t.start && now <= t.end);
+            
+            if (active) {
+                const wordIdx = Math.floor(((now - active.start) / (active.end - active.start)) * active.words.length);
+                const word = active.words[wordIdx];
+                if (word) {
+                    let finalColor = (mode === 'mix') ? colors[wordIdx % colors.length] : mode;
+                    draw3D(word, finalColor, chosenFont);
+                }
+            }
+
+            if (!audio.ended) requestAnimationFrame(renderLoop);
+            else recorder.stop();
+        }
+        renderLoop();
+    }
+</script>
+
+</body>
+</html>

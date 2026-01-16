@@ -2,24 +2,13 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Pro - Font & Color Selection</title>
-    <!-- Default Unicode Font -->
+    <title>Odia 3D Karaoke Pro - With Audio Fix</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
-        /* Loading Local Fonts */
-        @font-face {
-            font-family: 'Abhimanyu';
-            src: url('Abhimanyu.ttf');
-        }
-        @font-face {
-            font-family: 'Mahadev';
-            src: url('Mahadev.otf');
-        }
-        @font-face {
-            font-family: 'Samaleswari';
-            src: url('4- samaleswari.ttf');
-        }
+        @font-face { font-family: 'Abhimanyu'; src: url('Abhimanyu.ttf'); }
+        @font-face { font-family: 'Mahadev'; src: url('Mahadev.otf'); }
+        @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); }
 
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
@@ -75,7 +64,15 @@
                 <option value="#E0E0E0">3D Platinum Silver</option>
             </select>
 
-            <label>3. Files:</label>
+            <label>3. Subtitle Type:</label>
+            <select id="subTypeSelect">
+                <option value="1">1 Word (Default Single Highlight)</option>
+                <option value="3">3 Words (Highlight 1 by 1, others 50% opacity)</option>
+                <option value="4">4 Words (Highlight 1 by 1, others 50% opacity)</option>
+                <option value="5">5 Words (Highlight 1 by 1, others 50% opacity)</option>
+            </select>
+
+            <label>4. Files:</label>
             <input type="file" id="audioIn" accept="audio/*">
             <input type="file" id="textIn" accept=".txt">
         </div>
@@ -88,7 +85,7 @@
     </div>
 
     <div id="renderArea">
-        <div style="color:#00ff00; font-weight:bold; margin-bottom:10px;">● RENDERING & RECORDING...</div>
+        <div style="color:#00ff00; font-weight:bold; margin-bottom:10px;">● RENDERING & RECORDING AUDIO...</div>
         <canvas id="mainCanvas" width="1920" height="1080"></canvas>
         <div class="progress-container"><div id="progressBar"></div></div>
         <div id="percentText">0% Completed</div>
@@ -101,6 +98,7 @@
     const audio = document.getElementById('audioElement');
     const styleSelect = document.getElementById('styleSelect');
     const fontSelect = document.getElementById('fontSelect');
+    const subTypeSelect = document.getElementById('subTypeSelect');
     const startSync = document.getElementById('startSync');
     const tapBtn = document.getElementById('tapBtn');
     const canvas = document.getElementById('mainCanvas');
@@ -130,7 +128,6 @@
     function updateUI() {
         if (currentIdx < sentences.length) {
             document.getElementById('currentSentence').innerText = sentences[currentIdx];
-            // Apply font to preview
             document.getElementById('currentSentence').style.fontFamily = fontSelect.value;
         } else {
             document.getElementById('syncArea').style.display = 'none';
@@ -155,53 +152,52 @@
     tapBtn.onclick = doSync;
     window.onkeydown = (e) => { if(e.code === 'Space') { e.preventDefault(); doSync(); } };
 
-    function draw3D(text, color, font) {
-        const x = canvas.width / 2;
-        const y = canvas.height / 2;
-        
-        // Set the chosen font
-        ctx.font = `900 220px ${font}`;
-        ctx.textAlign = 'center';
+    function draw3D(text, x, y, color, font, opacity, size) {
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.font = `900 ${size}px ${font}`;
+        ctx.textAlign = 'left'; 
         ctx.textBaseline = 'middle';
-        ctx.lineJoin = 'round';
-
-        // 1. Bottom Shadow
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 40;
-        ctx.strokeText(text, x, y + 15);
-
-        // 2. Main Outline
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 35;
+        ctx.lineWidth = size * 0.18;
+        ctx.strokeText(text, x, y + (size * 0.06));
+        ctx.lineWidth = size * 0.15;
         ctx.strokeText(text, x, y);
-
-        // 3. Colored Body
         ctx.fillStyle = color;
         ctx.fillText(text, x, y);
+        ctx.restore();
     }
 
     async function startRendering() {
         const mode = styleSelect.value;
         const chosenFont = fontSelect.value;
-        const audioCtx = new AudioContext();
+        const subType = parseInt(subTypeSelect.value);
+
+        // --- AUDIO CAPTURE LOGIC ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
         const dest = audioCtx.createMediaStreamDestination();
+        
+        // Connect audio to both: the recorder AND the speakers
         source.connect(dest);
         source.connect(audioCtx.destination);
 
         const videoStream = canvas.captureStream(30);
-        const combined = new MediaStream([...videoStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
-        const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9' });
-        const chunks = [];
+        
+        // COMBINE Video Track + Audio Track
+        const combinedStream = new MediaStream([
+            ...videoStream.getVideoTracks(),
+            ...dest.stream.getAudioTracks()
+        ]);
 
+        const recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9,opus' });
+        const chunks = [];
         recorder.ondataavailable = e => chunks.push(e.data);
         recorder.onstop = () => {
             const blob = new Blob(chunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `odia_3d_karaoke.webm`;
-            a.click();
+            a.href = url; a.download = `karaoke_with_sound.webm`; a.click();
             audioCtx.close();
         };
 
@@ -221,11 +217,40 @@
             const active = timings.find(t => now >= t.start && now <= t.end);
             
             if (active) {
-                const wordIdx = Math.floor(((now - active.start) / (active.end - active.start)) * active.words.length);
-                const word = active.words[wordIdx];
-                if (word) {
-                    let finalColor = (mode === 'mix') ? colors[wordIdx % colors.length] : mode;
-                    draw3D(word, finalColor, chosenFont);
+                let fontSize = (subType === 1) ? 220 : 160;
+                const totalWords = active.words.length;
+                const progressInLine = (now - active.start) / (active.end - active.start);
+                const currentWordIdx = Math.floor(progressInLine * totalWords);
+
+                const chunkIdx = Math.floor(currentWordIdx / subType);
+                const startIndex = (subType === 1) ? currentWordIdx : chunkIdx * subType;
+                const wordSlice = (subType === 1) ? [active.words[currentWordIdx]] : active.words.slice(startIndex, startIndex + subType);
+                
+                if (wordSlice.length > 0) {
+                    const gap = 50;
+                    const sideMargin = 150;
+                    const maxAllowedWidth = canvas.width - (sideMargin * 2);
+
+                    ctx.font = `900 ${fontSize}px ${chosenFont}`;
+                    let wordWidths = wordSlice.map(w => ctx.measureText(w).width);
+                    let totalSliceWidth = wordWidths.reduce((a, b) => a + b, 0) + (gap * (wordSlice.length - 1));
+
+                    while (totalSliceWidth > maxAllowedWidth && fontSize > 50) {
+                        fontSize -= 5;
+                        ctx.font = `900 ${fontSize}px ${chosenFont}`;
+                        wordWidths = wordSlice.map(w => ctx.measureText(w).width);
+                        totalSliceWidth = wordWidths.reduce((a, b) => a + b, 0) + (gap * (wordSlice.length - 1));
+                    }
+
+                    let xOffset = (canvas.width - totalSliceWidth) / 2;
+                    wordSlice.forEach((word, i) => {
+                        const absoluteIdx = startIndex + i;
+                        const isHighlighted = (absoluteIdx === currentWordIdx);
+                        const opacity = isHighlighted ? 1.0 : 0.5;
+                        const wordColor = (mode === 'mix' ? colors[absoluteIdx % colors.length] : mode);
+                        draw3D(word, xOffset, canvas.height/2, wordColor, chosenFont, opacity, fontSize);
+                        xOffset += wordWidths[i] + gap;
+                    });
                 }
             }
 

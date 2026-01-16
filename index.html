@@ -6,9 +6,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
+        /* Existing Fonts */
         @font-face { font-family: 'Abhimanyu'; src: url('Abhimanyu.ttf'); }
         @font-face { font-family: 'Mahadev'; src: url('Mahadev.otf'); }
         @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); }
+
+        /* Newly Added Fonts from Folder */
+        @font-face { font-family: 'Banita'; src: url('banita.TTF'); }
+        @font-face { font-family: 'Kapila'; src: url('kapila.TTF'); }
+        @font-face { font-family: 'Konark'; src: url('konark.TTF'); }
 
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
@@ -49,6 +55,9 @@
                 <option value="Abhimanyu">Abhimanyu</option>
                 <option value="Mahadev">Mahadev</option>
                 <option value="Samaleswari">Samaleswari</option>
+                <option value="Banita">Banita (New)</option>
+                <option value="Kapila">Kapila (New)</option>
+                <option value="Konark">Konark (New)</option>
             </select>
 
             <label>2. Select 3D Color Style:</label>
@@ -97,6 +106,8 @@
 
 <script>
     const audio = document.getElementById('audioElement');
+    const audioIn = document.getElementById('audioIn');
+    const textIn = document.getElementById('textIn');
     const styleSelect = document.getElementById('styleSelect');
     const fontSelect = document.getElementById('fontSelect');
     const subTypeSelect = document.getElementById('subTypeSelect');
@@ -175,7 +186,6 @@
         const chosenFont = fontSelect.value;
         const rawSubType = subTypeSelect.value;
 
-        // --- AUDIO CAPTURE LOGIC ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
         const dest = audioCtx.createMediaStreamDestination();
@@ -216,11 +226,9 @@
             const active = timings.find(t => now >= t.start && now <= t.end);
             
             if (active) {
-                // Determine current subtype based on selection or randomness
                 let subType;
                 if (rawSubType === 'random') {
-                    // Logic to make "Random" stable per sentence but different across the song
-                    subType = (active.index % 3) + 2; // Cycles between 2, 3, 4 words
+                    subType = (active.index % 3) + 2; 
                 } else {
                     subType = parseInt(rawSubType);
                 }

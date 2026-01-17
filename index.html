@@ -2,11 +2,11 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro</title>
+    <title>Odia 3D Karaoke Pro - Stroke Fix</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
-        /* Remaining Fonts - Exact Case Matching */
+        /* Custom Fonts - Exact Case Matching */
         @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); font-weight: 900; }
         @font-face { font-family: 'Banita'; src: url('banita.TTF'); font-weight: 900; }
         @font-face { font-family: 'Kapila'; src: url('kapila.TTF'); font-weight: 900; }
@@ -39,19 +39,24 @@
         .btn-blue { background: #3b82f6; color: white; padding: 16px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; }
         .btn-blue:disabled { background: #475569; cursor: not-allowed; }
         
-        /* Font Preview Area (The box you pointed at) */
         #currentSentence { 
             font-size: 32px; 
-            color: #fbbf24; 
             min-height: 80px; 
             margin: 20px 0; 
             font-weight: bold; 
-            background: rgba(0,0,0,0.3);
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 12px;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: center;
+            border: 2px dashed #475569;
+            line-height: 1.6;
+        }
+        #currentSentence span {
+            margin: 0 8px;
+            text-shadow: 3px 3px 0px #000;
         }
     </style>
 </head>
@@ -71,7 +76,7 @@
         <div class="setup-section">
             <label>1. Select Odia Font:</label>
             <select id="fontSelect">
-                <option value="random">★ RANDOM FONT (Per Line)</option>
+                <option value="random">★ RANDOM FONT (One font per word)</option>
                 <option value="'Noto Sans Odia'">Default (Noto Sans)</option>
                 <option value="Samaleswari">Samaleswari</option>
                 <option value="Banita">Banita</option>
@@ -79,7 +84,7 @@
                 <option value="Konark">Konark</option>
             </select>
 
-            <label>2. Select 3D Color Style:</label>
+            <label>2. Select Active Word Style (Color):</label>
             <select id="styleSelect">
                 <option value="mix">★ RANDOM MIX (Color per Word)</option>
                 <option value="#FFFFFF">3D Pure White</option>
@@ -93,7 +98,7 @@
 
             <label>3. Subtitle Type:</label>
             <select id="subTypeSelect">
-                <option value="1">1 Word (Single Highlight)</option>
+                <option value="1">1 Word (Standard Single Highlight)</option>
                 <option value="3">3 Words</option>
                 <option value="4">4 Words</option>
                 <option value="5">5 Words</option>
@@ -108,7 +113,6 @@
     </div>
 
     <div id="syncArea">
-        <!-- Font is applied here dynamically -->
         <div id="currentSentence">...</div>
         <button class="tap-btn" id="tapBtn">TAP AT END OF LINE<br><small>(or Spacebar)</small></button>
     </div>
@@ -129,7 +133,7 @@
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
     
-    const fontList = ["Samaleswari", "Banita", "Kapila", "Konark"];
+    const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
     const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0"];
     
     let sentences = [];
@@ -151,8 +155,8 @@
     document.getElementById('textIn').onchange = validate;
 
     startSync.onclick = async () => {
-        const text = await document.getElementById('textIn').files[0].text();
-        sentences = text.split(/[।\n]+/).map(s => s.trim()).filter(s => s.length > 0);
+        const textData = await document.getElementById('textIn').files[0].text();
+        sentences = textData.split(/[।\n]+/).map(s => s.trim()).filter(s => s.length > 0);
         audio.src = URL.createObjectURL(document.getElementById('audioIn').files[0]);
         document.getElementById('setup').style.display = 'none';
         document.getElementById('syncArea').style.display = 'block';
@@ -163,13 +167,18 @@
     function updateUI() {
         const displayArea = document.getElementById('currentSentence');
         if (currentIdx < sentences.length) {
-            displayArea.innerText = sentences[currentIdx];
-            
-            // APPLY SELECTED FONT TO PREVIEW
+            displayArea.innerHTML = '';
+            const words = sentences[currentIdx].split(' ').filter(w => w.length > 0);
             const selFont = document.getElementById('fontSelect').value;
-            const fontToApply = (selFont === 'random') ? fontList[currentIdx % fontList.length] : selFont;
-            displayArea.style.fontFamily = fontToApply;
-            
+            const selStyle = document.getElementById('styleSelect').value;
+
+            words.forEach((word, i) => {
+                const span = document.createElement('span');
+                span.innerText = word;
+                span.style.fontFamily = (selFont === 'random') ? fontList[i % fontList.length] : selFont;
+                span.style.color = "#FFFFFF"; 
+                displayArea.appendChild(span);
+            });
         } else {
             document.getElementById('syncArea').style.display = 'none';
             document.getElementById('renderArea').style.display = 'block';
@@ -194,17 +203,30 @@
     document.getElementById('tapBtn').onclick = doSync;
     window.onkeydown = (e) => { if(e.code === 'Space') { e.preventDefault(); doSync(); } };
 
-    function draw3D(text, x, y, color, font, opacity, size) {
+    // FIX APPLIED HERE: lineJoin and lineCap set to 'round' to remove spikes (roots)
+    function draw3D(text, x, y, color, font, isHigh, size) {
         ctx.save();
-        ctx.globalAlpha = opacity;
-        ctx.font = `900 ${size}px ${font}`;
+        
+        const zoomFactor = isHigh ? 1.2 : 1.0;
+        const finalSize = size * zoomFactor;
+
+        ctx.font = `900 ${finalSize}px ${font}`;
         ctx.textAlign = 'left'; 
         ctx.textBaseline = 'middle';
+        
+        // SMOOTH STROKE FIX
+        ctx.lineJoin = 'round'; // This removes the spikes/roots
+        ctx.lineCap = 'round';
+        
+        // 3D STROKE
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = size * 0.2;
-        ctx.strokeText(text, x, y + (size * 0.05));
-        ctx.lineWidth = size * 0.15;
+        ctx.lineWidth = finalSize * 0.22;
+        ctx.strokeText(text, x, y + (finalSize * 0.05));
+        
+        ctx.lineWidth = finalSize * 0.18;
         ctx.strokeText(text, x, y);
+        
+        // FILL COLOR
         ctx.fillStyle = color;
         ctx.fillText(text, x, y);
         ctx.restore();
@@ -251,9 +273,8 @@
             const active = timings.find(t => now >= t.start && now <= t.end);
             
             if (active) {
-                let currentFont = (selFont === 'random') ? fontList[active.index % fontList.length] : selFont;
                 let subType = (selSub === 'random') ? (active.index % 3) + 2 : parseInt(selSub);
-                let fontSize = (subType === 1) ? 230 : 170;
+                let baseFontSize = (subType === 1) ? 220 : 160;
                 
                 const totalWords = active.words.length;
                 const lineProgress = (now - active.start) / (active.end - active.start);
@@ -264,21 +285,43 @@
                 const wordSlice = active.words.slice(startIndex, startIndex + subType);
 
                 if (wordSlice.length > 0) {
-                    ctx.font = `900 ${fontSize}px ${currentFont}`;
-                    let totalWidth = wordSlice.reduce((acc, w) => acc + ctx.measureText(w).width + 60, -60);
+                    const getWordFont = (absIdx) => (selFont === 'random') ? fontList[absIdx % fontList.length] : selFont;
+                    
+                    const calculateTotalWidth = (fSize) => {
+                        let total = 0;
+                        wordSlice.forEach((word, i) => {
+                            const absIdx = startIndex + i;
+                            const isHigh = (absIdx === currentWordIdx);
+                            const zoom = isHigh ? 1.2 : 1.0;
+                            ctx.font = `900 ${fSize * zoom}px ${getWordFont(absIdx)}`;
+                            total += ctx.measureText(word).width;
+                        });
+                        return total + (80 * (wordSlice.length - 1));
+                    };
 
-                    while (totalWidth > 1700 && fontSize > 50) {
-                        fontSize -= 5;
-                        ctx.font = `900 ${fontSize}px ${currentFont}`;
-                        totalWidth = wordSlice.reduce((acc, w) => acc + ctx.measureText(w).width + 60, -60);
+                    let totalWidth = calculateTotalWidth(baseFontSize);
+                    while (totalWidth > 1750 && baseFontSize > 50) {
+                        baseFontSize -= 5;
+                        totalWidth = calculateTotalWidth(baseFontSize);
                     }
 
                     let xPos = (canvas.width - totalWidth) / 2;
                     wordSlice.forEach((word, i) => {
-                        const isHigh = (startIndex + i === currentWordIdx);
-                        const wordColor = (selStyle === 'mix') ? colors[(startIndex + i) % colors.length] : selStyle;
-                        draw3D(word, xPos, canvas.height/2, wordColor, currentFont, isHigh ? 1 : 0.4, fontSize);
-                        xPos += ctx.measureText(word).width + 60;
+                        const absoluteIdx = startIndex + i;
+                        const isHigh = (absoluteIdx === currentWordIdx);
+                        
+                        const wordColor = isHigh ? 
+                            ((selStyle === 'mix') ? colors[absoluteIdx % colors.length] : selStyle) : 
+                            "#FFFFFF";
+
+                        const wordFont = getWordFont(absoluteIdx);
+                        const zoom = isHigh ? 1.2 : 1.0;
+                        
+                        ctx.font = `900 ${baseFontSize * zoom}px ${wordFont}`;
+                        const currentWordWidth = ctx.measureText(word).width;
+
+                        draw3D(word, xPos, canvas.height/2, wordColor, wordFont, isHigh, baseFontSize);
+                        xPos += currentWordWidth + 80;
                     });
                 }
             }

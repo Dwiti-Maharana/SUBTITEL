@@ -2,7 +2,7 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro - Fixed Button Hilite</title>
+    <title>Odia 3D Karaoke Pro - Gray Preview</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
@@ -26,6 +26,27 @@
         .flex-row { display: flex; gap: 15px; flex-wrap: wrap; }
         .flex-col { flex: 1; min-width: 200px; }
 
+        /* LIVE PREVIEW STYLING - ALWAYS GRAY */
+        #livePreview {
+            background: #808080; /* Solid Gray Background */
+            padding: 30px;
+            border-radius: 12px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            min-height: 100px;
+            overflow: hidden;
+            border: 3px solid #1e293b;
+        }
+        .preview-word {
+            font-size: 40px;
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
         #bgFileContainer { display: none; margin-top: -10px; padding: 10px; background: #1e293b; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 15px; }
         #syncArea { display: none; padding: 20px; }
         
@@ -46,7 +67,6 @@
             opacity: 0.7;
         }
 
-        /* Hilite effect when enabled */
         .btn-blue:not(:disabled) { 
             background: #3b82f6; 
             color: white; 
@@ -117,6 +137,15 @@
                 </div>
             </div>
 
+            <!-- LIVE PREVIEW AREA -->
+            <label>Live Style Preview</label>
+            <div id="livePreview">
+                <span class="preview-word">ମୁଁ</span>
+                <span class="preview-word">ଓଡିଆ</span>
+                <span class="preview-word">ଭାରୀ</span>
+                <span class="preview-word">ବଢିଆ</span>
+            </div>
+
             <!-- Active Colors Row -->
             <div class="flex-row">
                 <div class="flex-col">
@@ -185,12 +214,18 @@
 
             <div class="flex-row">
                 <div class="flex-col">
-                    <label>8. Subtitle Type:</label>
+                    <label>8. Subtitle Type (Words Per Screen):</label>
                     <select id="subTypeSelect">
                         <option value="1">1 Word Highlight</option>
+                        <option value="2">2 Words</option>
                         <option value="3">3 Words</option>
                         <option value="4">4 Words</option>
                         <option value="5">5 Words</option>
+                        <option value="6">6 Words</option>
+                        <option value="7">7 Words</option>
+                        <option value="8">8 Words</option>
+                        <option value="9">9 Words</option>
+                        <option value="10">10 Words</option>
                         <option value="random">★ RANDOM LAYOUT</option>
                     </select>
                 </div>
@@ -227,7 +262,6 @@
     
     const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
     
-    // --- COLOR MATCHING LOGIC ---
     const activeColorPairs = [
         {f: "#FFFF00", s: "#0000FF"}, {f: "#00FFFF", s: "#FF0000"},
         {f: "#FFFFFF", s: "#000000"}, {f: "#00FF00", s: "#800080"},
@@ -251,42 +285,58 @@
         return { fill: f, stroke: s };
     };
 
+    function updateLivePreview() {
+        const words = document.querySelectorAll('.preview-word');
+        const selectedFont = document.getElementById('fontSelect').value;
+        words.forEach((span, i) => {
+            const isActive = (i === 0); 
+            const colors = getFinalColors(i, isActive);
+            span.style.fontFamily = (selectedFont === 'random') ? fontList[i % fontList.length] : selectedFont;
+            span.style.color = colors.fill;
+            span.style.fontSize = isActive ? '52px' : '40px';
+            const s = colors.stroke;
+            span.style.textShadow = `2px 2px 0px ${s}, -2px -2px 0px ${s}, 2px -2px 0px ${s}, -2px 2px 0px ${s}`;
+        });
+    }
+
     let sentences = [];
     let timings = [];
     let currentIdx = 0;
     let lastTime = 0;
     let bgImageList = [];
 
-    // --- UPLOAD VALIDATION ---
     const validate = () => {
-        // If both files are selected, highlight the button
-        if(audioInput.files.length > 0 && textInput.files.length > 0) {
-            startSync.disabled = false;
-        } else {
-            startSync.disabled = true;
-        }
+        if(audioInput.files.length > 0 && textInput.files.length > 0) startSync.disabled = false;
+        else startSync.disabled = true;
     };
 
     audioInput.onchange = validate; 
     textInput.onchange = validate;
 
-    // Check fonts before allowing interaction
     document.fonts.ready.then(() => { 
         startSync.innerText = "START SYNCING"; 
-        validate(); 
+        validate();
+        updateLivePreview();
     });
 
-    // --- Rest of logic ---
     const setupToggle = (s, p) => document.getElementById(s).onchange = (e) => {
         document.getElementById(p).style.display = (e.target.value === 'custom') ? 'block' : 'none';
-        updateUI();
+        updateLivePreview();
     };
     setupToggle('activeColorType', 'activeColorPickerBox');
     setupToggle('strokeColorType', 'strokeColorPickerBox');
     setupToggle('inactiveColorType', 'inactiveColorPickerBox');
     setupToggle('inactiveStrokeType', 'inactiveStrokePickerBox');
+    
+    ['fontSelect', 'activeColorPicker', 'strokeColorPicker', 'inactiveColorPicker', 'inactiveStrokePicker'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateLivePreview);
+    });
 
-    document.getElementById('bgTypeSelect').onchange = (e) => document.getElementById('bgFileContainer').style.display = e.target.value === 'image' ? 'block' : 'none';
+    document.getElementById('bgTypeSelect').onchange = (e) => {
+        document.getElementById('bgFileContainer').style.display = e.target.value === 'image' ? 'block' : 'none';
+        // Note: Preview background logic removed to keep it Gray
+    };
+
     document.getElementById('bgImgIn').onchange = (e) => {
         bgImageList = [];
         for (let file of e.target.files) {
@@ -319,7 +369,7 @@
                 span.style.fontFamily = (fontSelect.value === 'random') ? fontList[i % fontList.length] : fontSelect.value;
                 const c = getFinalColors(i, false);
                 span.style.color = c.fill;
-                span.style.textShadow = `2px 2px 0px ${c.stroke}, -1px -1px 0px ${c.stroke}, 1px -1px 0px ${c.stroke}, -1px 1px 0px ${c.stroke}, 1px 1px 0px ${c.stroke}`;
+                span.style.textShadow = `2px 2px 0px ${c.stroke}, -1px -1px 0px ${c.stroke}, 1px -1px 0px ${c.stroke}, -1px 1px 0px ${c.stroke}`;
                 area.appendChild(span);
             });
         } else {
@@ -432,6 +482,5 @@
         renderLoop();
     }
 </script>
-
 </body>
 </html>

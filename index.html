@@ -2,20 +2,17 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro - Stroke Fix</title>
+    <title>Odia 3D Karaoke Pro - Multi-Image Slideshow</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
-        /* Custom Fonts - Exact Case Matching */
+        /* Custom Fonts */
         @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); font-weight: 900; }
         @font-face { font-family: 'Banita'; src: url('banita.TTF'); font-weight: 900; }
         @font-face { font-family: 'Kapila'; src: url('kapila.TTF'); font-weight: 900; }
         @font-face { font-family: 'Konark'; src: url('konark.TTF'); font-weight: 900; }
 
-        #fontPreloader { 
-            position: absolute; visibility: hidden; height: 0; width: 0; overflow: hidden; 
-            font-size: 10px;
-        }
+        #fontPreloader { position: absolute; visibility: hidden; height: 0; width: 0; overflow: hidden; }
 
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
@@ -23,6 +20,8 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #94a3b8; font-size: 14px; }
         select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; margin-bottom: 15px; box-sizing: border-box; }
         
+        #bgFileContainer { display: none; margin-top: -10px; padding: 10px; background: #1e293b; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 15px; }
+
         #syncArea { display: none; padding: 20px; }
         .tap-btn { 
             background: linear-gradient(135deg, #f59e0b, #d97706); padding: 60px; font-size: 26px; border-radius: 15px; 
@@ -32,7 +31,7 @@
         .tap-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e; }
 
         #renderArea { display: none; margin-top: 20px; background: #000; border-radius: 15px; padding: 15px; border: 2px solid #00ff00; }
-        canvas { background: #00FF00; width: 100%; border-radius: 10px; display: block; border: 1px solid #444; }
+        canvas { background: #000; width: 100%; border-radius: 10px; display: block; border: 1px solid #444; }
         
         .progress-container { width: 100%; background: #334155; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #00ff00; transition: 0.1s; }
@@ -40,24 +39,12 @@
         .btn-blue:disabled { background: #475569; cursor: not-allowed; }
         
         #currentSentence { 
-            font-size: 32px; 
-            min-height: 80px; 
-            margin: 20px 0; 
-            font-weight: bold; 
-            background: rgba(0,0,0,0.4);
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed #475569;
-            line-height: 1.6;
+            font-size: 32px; min-height: 80px; margin: 20px 0; font-weight: bold; 
+            background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+            border: 2px dashed #475569; line-height: 1.6;
         }
-        #currentSentence span {
-            margin: 0 8px;
-            text-shadow: 3px 3px 0px #000;
-        }
+        #currentSentence span { margin: 0 8px; text-shadow: 3px 3px 0px #000; }
     </style>
 </head>
 <body>
@@ -96,7 +83,17 @@
                 <option value="#A020F0">3D Vivid Purple</option>
             </select>
 
-            <label>3. Subtitle Type:</label>
+            <label>3. Background Selection (5s Slideshow):</label>
+            <select id="bgTypeSelect">
+                <option value="green">Default Green Screen</option>
+                <option value="image">Multiple Images (5s Each + Zoom)</option>
+            </select>
+            <div id="bgFileContainer">
+                <label style="color:#3b82f6;">Select Background Images (Hold Ctrl to pick many):</label>
+                <input type="file" id="bgImgIn" accept="image/*" multiple>
+            </div>
+
+            <label>4. Subtitle Type:</label>
             <select id="subTypeSelect">
                 <option value="1">1 Word (Standard Single Highlight)</option>
                 <option value="3">3 Words</option>
@@ -105,7 +102,7 @@
                 <option value="random">★ RANDOM LAYOUT (Dynamic)</option>
             </select>
 
-            <label>4. Files:</label>
+            <label>5. Audio & Text Files:</label>
             <input type="file" id="audioIn" accept="audio/*">
             <input type="file" id="textIn" accept=".txt">
         </div>
@@ -132,6 +129,9 @@
     const startSync = document.getElementById('startSync');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
+    const bgTypeSelect = document.getElementById('bgTypeSelect');
+    const bgFileContainer = document.getElementById('bgFileContainer');
+    const bgImgIn = document.getElementById('bgImgIn');
     
     const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
     const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0"];
@@ -140,6 +140,25 @@
     let timings = [];
     let currentIdx = 0;
     let lastTime = 0;
+    let bgImageList = [];
+
+    bgTypeSelect.onchange = () => {
+        bgFileContainer.style.display = bgTypeSelect.value === 'image' ? 'block' : 'none';
+    };
+
+    bgImgIn.onchange = () => {
+        bgImageList = [];
+        const files = bgImgIn.files;
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                bgImageList.push(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     document.fonts.ready.then(() => {
         startSync.innerText = "START SYNCING";
@@ -203,30 +222,20 @@
     document.getElementById('tapBtn').onclick = doSync;
     window.onkeydown = (e) => { if(e.code === 'Space') { e.preventDefault(); doSync(); } };
 
-    // FIX APPLIED HERE: lineJoin and lineCap set to 'round' to remove spikes (roots)
     function draw3D(text, x, y, color, font, isHigh, size) {
         ctx.save();
-        
         const zoomFactor = isHigh ? 1.2 : 1.0;
         const finalSize = size * zoomFactor;
-
         ctx.font = `900 ${finalSize}px ${font}`;
         ctx.textAlign = 'left'; 
         ctx.textBaseline = 'middle';
-        
-        // SMOOTH STROKE FIX
-        ctx.lineJoin = 'round'; // This removes the spikes/roots
+        ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        
-        // 3D STROKE
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = finalSize * 0.22;
         ctx.strokeText(text, x, y + (finalSize * 0.05));
-        
         ctx.lineWidth = finalSize * 0.18;
         ctx.strokeText(text, x, y);
-        
-        // FILL COLOR
         ctx.fillStyle = color;
         ctx.fillText(text, x, y);
         ctx.restore();
@@ -236,6 +245,7 @@
         const selFont = document.getElementById('fontSelect').value;
         const selStyle = document.getElementById('styleSelect').value;
         const selSub = document.getElementById('subTypeSelect').value;
+        const isImageMode = bgTypeSelect.value === 'image';
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
@@ -267,33 +277,47 @@
             document.getElementById('progressBar').style.width = progress + '%';
             document.getElementById('percentText').innerText = Math.round(progress) + '% Completed';
 
-            ctx.fillStyle = '#00FF00';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // --- BACKGROUND LOGIC ---
+            if (isImageMode && bgImageList.length > 0) {
+                // Change image index every 5 seconds
+                const imgIdx = Math.floor(now / 5) % bgImageList.length;
+                const activeImg = bgImageList[imgIdx];
+                
+                // Animation Progress: 0 to 1 every 5 seconds
+                const animProgress = (now % 5) / 5;
+                const zoomValue = 1.1 + (animProgress * 0.15); // Zooms from 1.1x to 1.25x
+                
+                const w = canvas.width * zoomValue;
+                const h = canvas.height * zoomValue;
+                const x = (canvas.width - w) / 2;
+                const y = (canvas.height - h) / 2;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(activeImg, x, y, w, h);
+            } else {
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
             const active = timings.find(t => now >= t.start && now <= t.end);
             
             if (active) {
                 let subType = (selSub === 'random') ? (active.index % 3) + 2 : parseInt(selSub);
                 let baseFontSize = (subType === 1) ? 220 : 160;
-                
                 const totalWords = active.words.length;
                 const lineProgress = (now - active.start) / (active.end - active.start);
                 const currentWordIdx = Math.floor(lineProgress * totalWords);
-
-                const groupIdx = Math.floor(currentWordIdx / subType);
-                const startIndex = (subType === 1) ? currentWordIdx : groupIdx * subType;
+                const startIndex = (subType === 1) ? currentWordIdx : Math.floor(currentWordIdx / subType) * subType;
                 const wordSlice = active.words.slice(startIndex, startIndex + subType);
 
                 if (wordSlice.length > 0) {
                     const getWordFont = (absIdx) => (selFont === 'random') ? fontList[absIdx % fontList.length] : selFont;
-                    
                     const calculateTotalWidth = (fSize) => {
                         let total = 0;
                         wordSlice.forEach((word, i) => {
                             const absIdx = startIndex + i;
                             const isHigh = (absIdx === currentWordIdx);
-                            const zoom = isHigh ? 1.2 : 1.0;
-                            ctx.font = `900 ${fSize * zoom}px ${getWordFont(absIdx)}`;
+                            ctx.font = `900 ${fSize * (isHigh ? 1.2 : 1.0)}px ${getWordFont(absIdx)}`;
                             total += ctx.measureText(word).width;
                         });
                         return total + (80 * (wordSlice.length - 1));
@@ -309,17 +333,10 @@
                     wordSlice.forEach((word, i) => {
                         const absoluteIdx = startIndex + i;
                         const isHigh = (absoluteIdx === currentWordIdx);
-                        
-                        const wordColor = isHigh ? 
-                            ((selStyle === 'mix') ? colors[absoluteIdx % colors.length] : selStyle) : 
-                            "#FFFFFF";
-
+                        const wordColor = isHigh ? ((selStyle === 'mix') ? colors[absoluteIdx % colors.length] : selStyle) : "#FFFFFF";
                         const wordFont = getWordFont(absoluteIdx);
-                        const zoom = isHigh ? 1.2 : 1.0;
-                        
-                        ctx.font = `900 ${baseFontSize * zoom}px ${wordFont}`;
+                        ctx.font = `900 ${baseFontSize * (isHigh ? 1.2 : 1.0)}px ${wordFont}`;
                         const currentWordWidth = ctx.measureText(word).width;
-
                         draw3D(word, xPos, canvas.height/2, wordColor, wordFont, isHigh, baseFontSize);
                         xPos += currentWordWidth + 80;
                     });

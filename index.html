@@ -2,11 +2,11 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro - Aspect Ratio Fix</title>
+    <title>Odia 3D Karaoke Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
-        /* Custom Fonts */
+        /* Custom Fonts Preserved */
         @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); font-weight: 900; }
         @font-face { font-family: 'Banita'; src: url('banita.TTF'); font-weight: 900; }
         @font-face { font-family: 'Kapila'; src: url('kapila.TTF'); font-weight: 900; }
@@ -87,6 +87,7 @@
                 <option value="#FF3131">3D Bright Red</option>
                 <option value="#FF8C00">3D Deep Orange</option>
                 <option value="#A020F0">3D Vivid Purple</option>
+                <option value="#E0E0E0">3D Platinum Silver</option>
             </select>
 
             <label>4. Background Selection:</label>
@@ -141,7 +142,7 @@
     const bgImgIn = document.getElementById('bgImgIn');
     
     const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
-    const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0"];
+    const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0", "#E0E0E0"];
     
     let sentences = [];
     let timings = [];
@@ -181,7 +182,6 @@
     document.getElementById('textIn').onchange = validate;
 
     startSync.onclick = async () => {
-        // Set Canvas Resolution based on Aspect Ratio
         if (ratioSelect.value === "16:9") {
             canvas.width = 1920; canvas.height = 1080;
         } else {
@@ -209,7 +209,7 @@
                 const span = document.createElement('span');
                 span.innerText = word;
                 span.style.fontFamily = (selFont === 'random') ? fontList[i % fontList.length] : selFont;
-                span.style.color = "#FFFFFF"; 
+                span.style.color = (selStyle === 'mix') ? colors[i % colors.length] : selStyle; 
                 displayArea.appendChild(span);
             });
         } else {
@@ -278,7 +278,7 @@
             const blob = new Blob(chunks, { type: 'video/webm' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `karaoke_${isPortrait ? 'portrait':'landscape'}.webm`;
+            a.download = `karaoke_export.webm`;
             a.click();
         };
 
@@ -292,20 +292,16 @@
             document.getElementById('progressBar').style.width = progress + '%';
             document.getElementById('percentText').innerText = Math.round(progress) + '% Completed';
 
-            // --- BACKGROUND SLIDESHOW ---
             if (isImageMode && bgImageList.length > 0) {
                 const imgIdx = Math.floor(now / 5) % bgImageList.length;
                 const activeImg = bgImageList[imgIdx];
                 const animProgress = (now % 5) / 5;
                 const zoomValue = 1.1 + (animProgress * 0.15); 
-                
-                // Calculate "Cover" aspect ratio for images
                 const scale = Math.max(canvas.width / activeImg.width, canvas.height / activeImg.height) * zoomValue;
                 const w = activeImg.width * scale;
                 const h = activeImg.height * scale;
                 const x = (canvas.width - w) / 2;
                 const y = (canvas.height - h) / 2;
-                
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(activeImg, x, y, w, h);
             } else {
@@ -317,10 +313,7 @@
             
             if (active) {
                 let subType = (selSub === 'random') ? (active.index % 3) + 2 : parseInt(selSub);
-                
-                // Adjusted Font size for Portrait mode
                 let baseFontSize = isPortrait ? 130 : (subType === 1 ? 220 : 160);
-                
                 const totalWords = active.words.length;
                 const lineProgress = (now - active.start) / (active.end - active.start);
                 const currentWordIdx = Math.floor(lineProgress * totalWords);
@@ -340,8 +333,7 @@
                         return total + (80 * (wordSlice.length - 1));
                     };
 
-                    // Dynamic Shrinking
-                    let maxWidth = canvas.width * 0.9; // 90% of screen width
+                    let maxWidth = canvas.width * 0.9;
                     let totalWidth = calculateTotalWidth(baseFontSize);
                     while (totalWidth > maxWidth && baseFontSize > 30) {
                         baseFontSize -= 5;

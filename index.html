@@ -2,7 +2,7 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro - Multi-Image Slideshow</title>
+    <title>Odia 3D Karaoke Pro - Aspect Ratio Fix</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
@@ -31,7 +31,7 @@
         .tap-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e; }
 
         #renderArea { display: none; margin-top: 20px; background: #000; border-radius: 15px; padding: 15px; border: 2px solid #00ff00; }
-        canvas { background: #000; width: 100%; border-radius: 10px; display: block; border: 1px solid #444; }
+        canvas { background: #000; width: 100%; border-radius: 10px; display: block; border: 1px solid #444; margin: auto; }
         
         .progress-container { width: 100%; background: #334155; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #00ff00; transition: 0.1s; }
@@ -61,7 +61,13 @@
     
     <div id="setup">
         <div class="setup-section">
-            <label>1. Select Odia Font:</label>
+            <label>1. Video Size (Aspect Ratio):</label>
+            <select id="ratioSelect">
+                <option value="16:9">16:9 Landscape (YouTube/TV)</option>
+                <option value="9:16">9:16 Portrait (Shorts/Reels/TikTok)</option>
+            </select>
+
+            <label>2. Select Odia Font:</label>
             <select id="fontSelect">
                 <option value="random">★ RANDOM FONT (One font per word)</option>
                 <option value="'Noto Sans Odia'">Default (Noto Sans)</option>
@@ -71,7 +77,7 @@
                 <option value="Konark">Konark</option>
             </select>
 
-            <label>2. Select Active Word Style (Color):</label>
+            <label>3. Select Active Word Style (Color):</label>
             <select id="styleSelect">
                 <option value="mix">★ RANDOM MIX (Color per Word)</option>
                 <option value="#FFFFFF">3D Pure White</option>
@@ -83,17 +89,17 @@
                 <option value="#A020F0">3D Vivid Purple</option>
             </select>
 
-            <label>3. Background Selection (5s Slideshow):</label>
+            <label>4. Background Selection:</label>
             <select id="bgTypeSelect">
                 <option value="green">Default Green Screen</option>
-                <option value="image">Multiple Images (5s Each + Zoom)</option>
+                <option value="image">Multiple Images (5s Each Slideshow)</option>
             </select>
             <div id="bgFileContainer">
                 <label style="color:#3b82f6;">Select Background Images (Hold Ctrl to pick many):</label>
                 <input type="file" id="bgImgIn" accept="image/*" multiple>
             </div>
 
-            <label>4. Subtitle Type:</label>
+            <label>5. Subtitle Type:</label>
             <select id="subTypeSelect">
                 <option value="1">1 Word (Standard Single Highlight)</option>
                 <option value="3">3 Words</option>
@@ -102,7 +108,7 @@
                 <option value="random">★ RANDOM LAYOUT (Dynamic)</option>
             </select>
 
-            <label>5. Audio & Text Files:</label>
+            <label>6. Audio & Text Files:</label>
             <input type="file" id="audioIn" accept="audio/*">
             <input type="file" id="textIn" accept=".txt">
         </div>
@@ -116,7 +122,7 @@
 
     <div id="renderArea">
         <div style="color:#00ff00; font-weight:bold; margin-bottom:10px;">● RENDERING & RECORDING...</div>
-        <canvas id="mainCanvas" width="1920" height="1080"></canvas>
+        <canvas id="mainCanvas"></canvas>
         <div class="progress-container"><div id="progressBar"></div></div>
         <div id="percentText">0% Completed</div>
     </div>
@@ -129,6 +135,7 @@
     const startSync = document.getElementById('startSync');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
+    const ratioSelect = document.getElementById('ratioSelect');
     const bgTypeSelect = document.getElementById('bgTypeSelect');
     const bgFileContainer = document.getElementById('bgFileContainer');
     const bgImgIn = document.getElementById('bgImgIn');
@@ -174,6 +181,13 @@
     document.getElementById('textIn').onchange = validate;
 
     startSync.onclick = async () => {
+        // Set Canvas Resolution based on Aspect Ratio
+        if (ratioSelect.value === "16:9") {
+            canvas.width = 1920; canvas.height = 1080;
+        } else {
+            canvas.width = 1080; canvas.height = 1920;
+        }
+
         const textData = await document.getElementById('textIn').files[0].text();
         sentences = textData.split(/[।\n]+/).map(s => s.trim()).filter(s => s.length > 0);
         audio.src = URL.createObjectURL(document.getElementById('audioIn').files[0]);
@@ -246,6 +260,7 @@
         const selStyle = document.getElementById('styleSelect').value;
         const selSub = document.getElementById('subTypeSelect').value;
         const isImageMode = bgTypeSelect.value === 'image';
+        const isPortrait = ratioSelect.value === "9:16";
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
@@ -263,7 +278,7 @@
             const blob = new Blob(chunks, { type: 'video/webm' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = "karaoke_video.webm";
+            a.download = `karaoke_${isPortrait ? 'portrait':'landscape'}.webm`;
             a.click();
         };
 
@@ -277,18 +292,17 @@
             document.getElementById('progressBar').style.width = progress + '%';
             document.getElementById('percentText').innerText = Math.round(progress) + '% Completed';
 
-            // --- BACKGROUND LOGIC ---
+            // --- BACKGROUND SLIDESHOW ---
             if (isImageMode && bgImageList.length > 0) {
-                // Change image index every 5 seconds
                 const imgIdx = Math.floor(now / 5) % bgImageList.length;
                 const activeImg = bgImageList[imgIdx];
-                
-                // Animation Progress: 0 to 1 every 5 seconds
                 const animProgress = (now % 5) / 5;
-                const zoomValue = 1.1 + (animProgress * 0.15); // Zooms from 1.1x to 1.25x
+                const zoomValue = 1.1 + (animProgress * 0.15); 
                 
-                const w = canvas.width * zoomValue;
-                const h = canvas.height * zoomValue;
+                // Calculate "Cover" aspect ratio for images
+                const scale = Math.max(canvas.width / activeImg.width, canvas.height / activeImg.height) * zoomValue;
+                const w = activeImg.width * scale;
+                const h = activeImg.height * scale;
                 const x = (canvas.width - w) / 2;
                 const y = (canvas.height - h) / 2;
                 
@@ -303,7 +317,10 @@
             
             if (active) {
                 let subType = (selSub === 'random') ? (active.index % 3) + 2 : parseInt(selSub);
-                let baseFontSize = (subType === 1) ? 220 : 160;
+                
+                // Adjusted Font size for Portrait mode
+                let baseFontSize = isPortrait ? 130 : (subType === 1 ? 220 : 160);
+                
                 const totalWords = active.words.length;
                 const lineProgress = (now - active.start) / (active.end - active.start);
                 const currentWordIdx = Math.floor(lineProgress * totalWords);
@@ -323,8 +340,10 @@
                         return total + (80 * (wordSlice.length - 1));
                     };
 
+                    // Dynamic Shrinking
+                    let maxWidth = canvas.width * 0.9; // 90% of screen width
                     let totalWidth = calculateTotalWidth(baseFontSize);
-                    while (totalWidth > 1750 && baseFontSize > 50) {
+                    while (totalWidth > maxWidth && baseFontSize > 30) {
                         baseFontSize -= 5;
                         totalWidth = calculateTotalWidth(baseFontSize);
                     }

@@ -2,11 +2,11 @@
 <html lang="or">
 <head>
     <meta charset="UTF-8">
-    <title>Odia 3D Karaoke Pro</title>
+    <title>Odia 3D Karaoke Pro - Fixed Button Hilite</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Odia:wght@900&display=swap" rel="stylesheet">
     
     <style>
-        /* Custom Fonts Preserved */
+        /* Custom Fonts */
         @font-face { font-family: 'Samaleswari'; src: url('4- samaleswari.ttf'); font-weight: 900; }
         @font-face { font-family: 'Banita'; src: url('banita.TTF'); font-weight: 900; }
         @font-face { font-family: 'Kapila'; src: url('kapila.TTF'); font-weight: 900; }
@@ -15,36 +15,71 @@
         #fontPreloader { position: absolute; visibility: hidden; height: 0; width: 0; overflow: hidden; }
 
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 850px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
+        .container { max-width: 950px; margin: auto; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
         .setup-section { text-align: left; background: #334155; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #94a3b8; font-size: 14px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #94a3b8; font-size: 13px; }
         select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; margin-bottom: 15px; box-sizing: border-box; }
         
-        #bgFileContainer { display: none; margin-top: -10px; padding: 10px; background: #1e293b; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 15px; }
+        .picker-box { display: none; margin-top: -10px; margin-bottom: 15px; }
+        input[type="color"] { height: 45px; cursor: pointer; padding: 2px; }
 
+        .flex-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .flex-col { flex: 1; min-width: 200px; }
+
+        #bgFileContainer { display: none; margin-top: -10px; padding: 10px; background: #1e293b; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 15px; }
         #syncArea { display: none; padding: 20px; }
+        
+        /* SYNC BUTTON STYLING */
+        .btn-blue { 
+            background: #475569; 
+            color: #94a3b8; 
+            padding: 18px; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 20px; 
+            cursor: not-allowed; 
+            width: 100%; 
+            font-weight: bold; 
+            transition: 0.4s all ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        /* Hilite effect when enabled */
+        .btn-blue:not(:disabled) { 
+            background: #3b82f6; 
+            color: white; 
+            cursor: pointer; 
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+            animation: pulse-hilite 2s infinite;
+        }
+
+        @keyframes pulse-hilite {
+            0% { transform: scale(1); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+            50% { transform: scale(1.01); box-shadow: 0 0 25px rgba(59, 130, 246, 0.9); }
+            100% { transform: scale(1); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        }
+
         .tap-btn { 
-            background: linear-gradient(135deg, #f59e0b, #d97706); padding: 60px; font-size: 26px; border-radius: 15px; 
+            background: linear-gradient(135deg, #f59e0b, #d97706); padding: 50px; font-size: 24px; border-radius: 15px; 
             cursor: pointer; font-weight: bold; border: none; width: 100%; color: white;
             box-shadow: 0 6px 0 #92400e; margin-bottom: 20px; transition: 0.1s;
         }
         .tap-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e; }
-
         #renderArea { display: none; margin-top: 20px; background: #000; border-radius: 15px; padding: 15px; border: 2px solid #00ff00; }
         canvas { background: #000; width: 100%; border-radius: 10px; display: block; border: 1px solid #444; margin: auto; }
-        
         .progress-container { width: 100%; background: #334155; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
         #progressBar { width: 0%; height: 100%; background: #00ff00; transition: 0.1s; }
-        .btn-blue { background: #3b82f6; color: white; padding: 16px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-blue:disabled { background: #475569; cursor: not-allowed; }
         
         #currentSentence { 
-            font-size: 32px; min-height: 80px; margin: 20px 0; font-weight: bold; 
+            font-size: 28px; min-height: 80px; margin: 20px 0; font-weight: bold; 
             background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px;
             display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
             border: 2px dashed #475569; line-height: 1.6;
         }
-        #currentSentence span { margin: 0 8px; text-shadow: 3px 3px 0px #000; }
+        #currentSentence span { margin: 0 6px; }
     </style>
 </head>
 <body>
@@ -57,59 +92,111 @@
 </div>
 
 <div class="container">
-    <h1 style="color:#00ff00; margin-top: 0;">Odia 3D Karaoke Pro</h1>
+    <h1 style="color:#00ff00; margin-top: 0; font-size: 24px;">Odia 3D Karaoke Pro</h1>
     
     <div id="setup">
         <div class="setup-section">
-            <label>1. Video Size (Aspect Ratio):</label>
-            <select id="ratioSelect">
-                <option value="16:9">16:9 Landscape (YouTube/TV)</option>
-                <option value="9:16">9:16 Portrait (Shorts/Reels/TikTok)</option>
-            </select>
+            <div class="flex-row">
+                <div class="flex-col">
+                    <label>1. Video Size:</label>
+                    <select id="ratioSelect">
+                        <option value="16:9">16:9 Landscape</option>
+                        <option value="9:16">9:16 Portrait</option>
+                    </select>
+                </div>
+                <div class="flex-col">
+                    <label>2. Odia Font:</label>
+                    <select id="fontSelect">
+                        <option value="random">★ RANDOM (Per Word)</option>
+                        <option value="'Noto Sans Odia'">Noto Sans</option>
+                        <option value="Samaleswari">Samaleswari</option>
+                        <option value="Banita">Banita</option>
+                        <option value="Kapila">Kapila</option>
+                        <option value="Konark">Konark</option>
+                    </select>
+                </div>
+            </div>
 
-            <label>2. Select Odia Font:</label>
-            <select id="fontSelect">
-                <option value="random">★ RANDOM FONT (One font per word)</option>
-                <option value="'Noto Sans Odia'">Default (Noto Sans)</option>
-                <option value="Samaleswari">Samaleswari</option>
-                <option value="Banita">Banita</option>
-                <option value="Kapila">Kapila</option>
-                <option value="Konark">Konark</option>
-            </select>
+            <!-- Active Colors Row -->
+            <div class="flex-row">
+                <div class="flex-col">
+                    <label>3. Active Word Fill Color:</label>
+                    <select id="activeColorType">
+                        <option value="random">★ RANDOM CYCLE</option>
+                        <option value="#FF3131">Vivid Red</option>
+                        <option value="#00FFFF">Electric Cyan</option>
+                        <option value="#FFD700">Royal Gold</option>
+                        <option value="custom">Choose Custom Color ↓</option>
+                    </select>
+                    <div id="activeColorPickerBox" class="picker-box">
+                        <input type="color" id="activeColorPicker" value="#FF3131">
+                    </div>
+                </div>
+                <div class="flex-col">
+                    <label>4. Active Word Stroke Color:</label>
+                    <select id="strokeColorType">
+                        <option value="random">★ RANDOM CYCLE</option>
+                        <option value="#000000">Deep Black (Default)</option>
+                        <option value="#FFFFFF">Pure White</option>
+                        <option value="custom">Choose Custom Color ↓</option>
+                    </select>
+                    <div id="strokeColorPickerBox" class="picker-box">
+                        <input type="color" id="strokeColorPicker" value="#000000">
+                    </div>
+                </div>
+            </div>
 
-            <label>3. Select Active Word Style (Color):</label>
-            <select id="styleSelect">
-                <option value="mix">★ RANDOM MIX (Color per Word)</option>
-                <option value="#FFFFFF">3D Pure White</option>
-                <option value="#FFD700">3D Royal Gold</option>
-                <option value="#00FFFF">3D Electric Cyan</option>
-                <option value="#FF00FF">3D Hot Pink</option>
-                <option value="#FF3131">3D Bright Red</option>
-                <option value="#FF8C00">3D Deep Orange</option>
-                <option value="#A020F0">3D Vivid Purple</option>
-                <option value="#E0E0E0">3D Platinum Silver</option>
-            </select>
+            <!-- Inactive Colors Row -->
+            <div class="flex-row">
+                <div class="flex-col">
+                    <label>5. Inactive Word Fill Color:</label>
+                    <select id="inactiveColorType">
+                        <option value="random">★ RANDOM CYCLE</option>
+                        <option value="#FFFFFF">Pure White (Default)</option>
+                        <option value="#E0E0E0">Light Grey</option>
+                        <option value="custom">Choose Custom Color ↓</option>
+                    </select>
+                    <div id="inactiveColorPickerBox" class="picker-box">
+                        <input type="color" id="inactiveColorPicker" value="#FFFFFF">
+                    </div>
+                </div>
+                <div class="flex-col">
+                    <label>6. Inactive Word Stroke Color:</label>
+                    <select id="inactiveStrokeType">
+                        <option value="random">★ RANDOM CYCLE</option>
+                        <option value="#000000">Deep Black (Default)</option>
+                        <option value="#333333">Dark Charcoal</option>
+                        <option value="custom">Choose Custom Color ↓</option>
+                    </select>
+                    <div id="inactiveStrokePickerBox" class="picker-box">
+                        <input type="color" id="inactiveStrokePicker" value="#000000">
+                    </div>
+                </div>
+            </div>
 
-            <label>4. Background Selection:</label>
+            <label>7. Background Selection:</label>
             <select id="bgTypeSelect">
                 <option value="green">Default Green Screen</option>
-                <option value="image">Multiple Images (5s Each Slideshow)</option>
+                <option value="image">Multi-Image Slideshow (5s Cycle)</option>
             </select>
             <div id="bgFileContainer">
-                <label style="color:#3b82f6;">Select Background Images (Hold Ctrl to pick many):</label>
                 <input type="file" id="bgImgIn" accept="image/*" multiple>
             </div>
 
-            <label>5. Subtitle Type:</label>
-            <select id="subTypeSelect">
-                <option value="1">1 Word (Standard Single Highlight)</option>
-                <option value="3">3 Words</option>
-                <option value="4">4 Words</option>
-                <option value="5">5 Words</option>
-                <option value="random">★ RANDOM LAYOUT (Dynamic)</option>
-            </select>
+            <div class="flex-row">
+                <div class="flex-col">
+                    <label>8. Subtitle Type:</label>
+                    <select id="subTypeSelect">
+                        <option value="1">1 Word Highlight</option>
+                        <option value="3">3 Words</option>
+                        <option value="4">4 Words</option>
+                        <option value="5">5 Words</option>
+                        <option value="random">★ RANDOM LAYOUT</option>
+                    </select>
+                </div>
+            </div>
 
-            <label>6. Audio & Text Files:</label>
+            <label>9. Audio & Text Files:</label>
             <input type="file" id="audioIn" accept="audio/*">
             <input type="file" id="textIn" accept=".txt">
         </div>
@@ -122,7 +209,6 @@
     </div>
 
     <div id="renderArea">
-        <div style="color:#00ff00; font-weight:bold; margin-bottom:10px;">● RENDERING & RECORDING...</div>
         <canvas id="mainCanvas"></canvas>
         <div class="progress-container"><div id="progressBar"></div></div>
         <div id="percentText">0% Completed</div>
@@ -136,61 +222,86 @@
     const startSync = document.getElementById('startSync');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    const ratioSelect = document.getElementById('ratioSelect');
-    const bgTypeSelect = document.getElementById('bgTypeSelect');
-    const bgFileContainer = document.getElementById('bgFileContainer');
-    const bgImgIn = document.getElementById('bgImgIn');
+    const audioInput = document.getElementById('audioIn');
+    const textInput = document.getElementById('textIn');
     
     const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
-    const colors = ["#FFFFFF", "#FFD700", "#00FFFF", "#FF00FF", "#FF3131", "#FF8C00", "#A020F0", "#E0E0E0"];
     
+    // --- COLOR MATCHING LOGIC ---
+    const activeColorPairs = [
+        {f: "#FFFF00", s: "#0000FF"}, {f: "#00FFFF", s: "#FF0000"},
+        {f: "#FFFFFF", s: "#000000"}, {f: "#00FF00", s: "#800080"},
+        {f: "#FF00FF", s: "#006400"}, {f: "#FFA500", s: "#000080"},
+        {f: "#FF3131", s: "#FFFFFF"}, {f: "#ADFF2F", s: "#000000"}
+    ];
+    const inactiveColorPairs = [
+        {f: "#FFFFFF", s: "#000000"}, {f: "#D3D3D3", s: "#2F4F4F"},
+        {f: "#E0E0E0", s: "#000000"}, {f: "#C0C0C0", s: "#333333"}
+    ];
+
+    const getFinalColors = (index, isActive) => {
+        const typeVal = document.getElementById(isActive ? 'activeColorType' : 'inactiveColorType').value;
+        const strokeVal = document.getElementById(isActive ? 'strokeColorType' : 'inactiveStrokeType').value;
+        const pair = (isActive ? activeColorPairs : inactiveColorPairs)[index % (isActive ? activeColorPairs.length : inactiveColorPairs.length)];
+        
+        let f = (typeVal === 'random') ? pair.f : (typeVal === 'custom' ? document.getElementById(isActive ? 'activeColorPicker' : 'inactiveColorPicker').value : typeVal);
+        let s = (strokeVal === 'random') ? pair.s : (strokeVal === 'custom' ? document.getElementById(isActive ? 'strokeColorPicker' : 'inactiveStrokePicker').value : strokeVal);
+        
+        if (f.toLowerCase() === s.toLowerCase()) s = (f.toLowerCase() === "#000000") ? "#FFFFFF" : "#000000";
+        return { fill: f, stroke: s };
+    };
+
     let sentences = [];
     let timings = [];
     let currentIdx = 0;
     let lastTime = 0;
     let bgImageList = [];
 
-    bgTypeSelect.onchange = () => {
-        bgFileContainer.style.display = bgTypeSelect.value === 'image' ? 'block' : 'none';
+    // --- UPLOAD VALIDATION ---
+    const validate = () => {
+        // If both files are selected, highlight the button
+        if(audioInput.files.length > 0 && textInput.files.length > 0) {
+            startSync.disabled = false;
+        } else {
+            startSync.disabled = true;
+        }
     };
 
-    bgImgIn.onchange = () => {
+    audioInput.onchange = validate; 
+    textInput.onchange = validate;
+
+    // Check fonts before allowing interaction
+    document.fonts.ready.then(() => { 
+        startSync.innerText = "START SYNCING"; 
+        validate(); 
+    });
+
+    // --- Rest of logic ---
+    const setupToggle = (s, p) => document.getElementById(s).onchange = (e) => {
+        document.getElementById(p).style.display = (e.target.value === 'custom') ? 'block' : 'none';
+        updateUI();
+    };
+    setupToggle('activeColorType', 'activeColorPickerBox');
+    setupToggle('strokeColorType', 'strokeColorPickerBox');
+    setupToggle('inactiveColorType', 'inactiveColorPickerBox');
+    setupToggle('inactiveStrokeType', 'inactiveStrokePickerBox');
+
+    document.getElementById('bgTypeSelect').onchange = (e) => document.getElementById('bgFileContainer').style.display = e.target.value === 'image' ? 'block' : 'none';
+    document.getElementById('bgImgIn').onchange = (e) => {
         bgImageList = [];
-        const files = bgImgIn.files;
-        for (let file of files) {
+        for (let file of e.target.files) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                bgImageList.push(img);
-            };
+            reader.onload = (ev) => { const img = new Image(); img.src = ev.target.result; bgImageList.push(img); };
             reader.readAsDataURL(file);
         }
     };
 
-    document.fonts.ready.then(() => {
-        startSync.innerText = "START SYNCING";
-        validate();
-    });
-
-    const validate = () => { 
-        if(document.getElementById('audioIn').files[0] && document.getElementById('textIn').files[0]) {
-            startSync.disabled = false; 
-        }
-    };
-    document.getElementById('audioIn').onchange = validate; 
-    document.getElementById('textIn').onchange = validate;
-
     startSync.onclick = async () => {
-        if (ratioSelect.value === "16:9") {
-            canvas.width = 1920; canvas.height = 1080;
-        } else {
-            canvas.width = 1080; canvas.height = 1920;
-        }
-
-        const textData = await document.getElementById('textIn').files[0].text();
+        canvas.width = (ratioSelect.value === "16:9") ? 1920 : 1080;
+        canvas.height = (ratioSelect.value === "16:9") ? 1080 : 1920;
+        const textData = await textInput.files[0].text();
         sentences = textData.split(/[।\n]+/).map(s => s.trim()).filter(s => s.length > 0);
-        audio.src = URL.createObjectURL(document.getElementById('audioIn').files[0]);
+        audio.src = URL.createObjectURL(audioInput.files[0]);
         document.getElementById('setup').style.display = 'none';
         document.getElementById('syncArea').style.display = 'block';
         audio.play();
@@ -198,19 +309,18 @@
     };
 
     function updateUI() {
-        const displayArea = document.getElementById('currentSentence');
+        const area = document.getElementById('currentSentence');
+        if (!area || sentences.length === 0) return;
         if (currentIdx < sentences.length) {
-            displayArea.innerHTML = '';
-            const words = sentences[currentIdx].split(' ').filter(w => w.length > 0);
-            const selFont = document.getElementById('fontSelect').value;
-            const selStyle = document.getElementById('styleSelect').value;
-
-            words.forEach((word, i) => {
+            area.innerHTML = '';
+            sentences[currentIdx].split(' ').filter(w => w.length > 0).forEach((word, i) => {
                 const span = document.createElement('span');
                 span.innerText = word;
-                span.style.fontFamily = (selFont === 'random') ? fontList[i % fontList.length] : selFont;
-                span.style.color = (selStyle === 'mix') ? colors[i % colors.length] : selStyle; 
-                displayArea.appendChild(span);
+                span.style.fontFamily = (fontSelect.value === 'random') ? fontList[i % fontList.length] : fontSelect.value;
+                const c = getFinalColors(i, false);
+                span.style.color = c.fill;
+                span.style.textShadow = `2px 2px 0px ${c.stroke}, -1px -1px 0px ${c.stroke}, 1px -1px 0px ${c.stroke}, -1px 1px 0px ${c.stroke}, 1px 1px 0px ${c.stroke}`;
+                area.appendChild(span);
             });
         } else {
             document.getElementById('syncArea').style.display = 'none';
@@ -221,139 +331,101 @@
 
     function doSync() {
         if (currentIdx < sentences.length) {
-            timings.push({
-                index: currentIdx,
-                words: sentences[currentIdx].split(' ').filter(w => w.length > 0),
-                start: lastTime,
-                end: audio.currentTime
-            });
+            timings.push({ index: currentIdx, words: sentences[currentIdx].split(' ').filter(w => w.length > 0), start: lastTime, end: audio.currentTime });
             lastTime = audio.currentTime;
             currentIdx++;
             updateUI();
         }
     }
-
-    document.getElementById('tapBtn').onclick = doSync;
+    tapBtn.onclick = doSync;
     window.onkeydown = (e) => { if(e.code === 'Space') { e.preventDefault(); doSync(); } };
 
-    function draw3D(text, x, y, color, font, isHigh, size) {
+    function draw3D(text, x, y, fillClr, strokeClr, font, isHigh, size) {
         ctx.save();
-        const zoomFactor = isHigh ? 1.2 : 1.0;
-        const finalSize = size * zoomFactor;
-        ctx.font = `900 ${finalSize}px ${font}`;
-        ctx.textAlign = 'left'; 
-        ctx.textBaseline = 'middle';
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = finalSize * 0.22;
-        ctx.strokeText(text, x, y + (finalSize * 0.05));
-        ctx.lineWidth = finalSize * 0.18;
+        const fs = size * (isHigh ? 1.2 : 1.0);
+        ctx.font = `900 ${fs}px ${font}`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.strokeStyle = strokeClr;
+        ctx.lineWidth = fs * 0.22;
+        ctx.strokeText(text, x, y + (fs * 0.05));
+        ctx.lineWidth = fs * 0.18;
         ctx.strokeText(text, x, y);
-        ctx.fillStyle = color;
+        ctx.fillStyle = fillClr;
         ctx.fillText(text, x, y);
         ctx.restore();
     }
 
     async function startRendering() {
-        const selFont = document.getElementById('fontSelect').value;
-        const selStyle = document.getElementById('styleSelect').value;
-        const selSub = document.getElementById('subTypeSelect').value;
-        const isImageMode = bgTypeSelect.value === 'image';
-        const isPortrait = ratioSelect.value === "9:16";
-
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(audio);
         const dest = audioCtx.createMediaStreamDestination();
-        source.connect(dest);
-        source.connect(audioCtx.destination);
-
-        const videoStream = canvas.captureStream(30);
-        const combined = new MediaStream([...videoStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
-        const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9,opus' });
-        
+        source.connect(dest); source.connect(audioCtx.destination);
+        const recorder = new MediaRecorder(new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]), { mimeType: 'video/webm;codecs=vp9,opus' });
         const chunks = [];
         recorder.ondataavailable = e => chunks.push(e.data);
         recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `karaoke_export.webm`;
-            a.click();
+            a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+            a.download = `karaoke_export.webm`; a.click();
         };
-
-        audio.currentTime = 0;
-        recorder.start();
-        audio.play();
+        audio.currentTime = 0; recorder.start(); audio.play();
 
         function renderLoop() {
             const now = audio.currentTime;
-            const progress = (now / audio.duration) * 100;
-            document.getElementById('progressBar').style.width = progress + '%';
-            document.getElementById('percentText').innerText = Math.round(progress) + '% Completed';
+            document.getElementById('progressBar').style.width = (now / audio.duration) * 100 + '%';
+            document.getElementById('percentText').innerText = Math.round((now / audio.duration) * 100) + '% Completed';
 
-            if (isImageMode && bgImageList.length > 0) {
-                const imgIdx = Math.floor(now / 5) % bgImageList.length;
-                const activeImg = bgImageList[imgIdx];
-                const animProgress = (now % 5) / 5;
-                const zoomValue = 1.1 + (animProgress * 0.15); 
-                const scale = Math.max(canvas.width / activeImg.width, canvas.height / activeImg.height) * zoomValue;
-                const w = activeImg.width * scale;
-                const h = activeImg.height * scale;
-                const x = (canvas.width - w) / 2;
-                const y = (canvas.height - h) / 2;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(activeImg, x, y, w, h);
+            if (document.getElementById('bgTypeSelect').value === 'image' && bgImageList.length > 0) {
+                const img = bgImageList[Math.floor(now / 5) % bgImageList.length];
+                const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * (1.1 + ((now % 5) / 5) * 0.15);
+                ctx.drawImage(img, (canvas.width - img.width * scale) / 2, (canvas.height - img.height * scale) / 2, img.width * scale, img.height * scale);
             } else {
-                ctx.fillStyle = '#00FF00';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00FF00'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
             const active = timings.find(t => now >= t.start && now <= t.end);
-            
             if (active) {
-                let subType = (selSub === 'random') ? (active.index % 3) + 2 : parseInt(selSub);
-                let baseFontSize = isPortrait ? 130 : (subType === 1 ? 220 : 160);
-                const totalWords = active.words.length;
-                const lineProgress = (now - active.start) / (active.end - active.start);
-                const currentWordIdx = Math.floor(lineProgress * totalWords);
-                const startIndex = (subType === 1) ? currentWordIdx : Math.floor(currentWordIdx / subType) * subType;
-                const wordSlice = active.words.slice(startIndex, startIndex + subType);
+                let subType = (subTypeSelect.value === 'random') ? (active.index % 3) + 2 : parseInt(subTypeSelect.value);
+                let baseFontSize = (ratioSelect.value === "9:16") ? 130 : (subType === 1 ? 220 : 165);
+                const progress = (now - active.start) / (active.end - active.start);
+                const wordIdx = Math.floor(progress * active.words.length);
+                const startAt = (subType === 1) ? wordIdx : Math.floor(wordIdx / subType) * subType;
+                const wordSlice = active.words.slice(startAt, startAt + subType);
 
                 if (wordSlice.length > 0) {
-                    const getWordFont = (absIdx) => (selFont === 'random') ? fontList[absIdx % fontList.length] : selFont;
-                    const calculateTotalWidth = (fSize) => {
-                        let total = 0;
-                        wordSlice.forEach((word, i) => {
-                            const absIdx = startIndex + i;
-                            const isHigh = (absIdx === currentWordIdx);
-                            ctx.font = `900 ${fSize * (isHigh ? 1.2 : 1.0)}px ${getWordFont(absIdx)}`;
-                            total += ctx.measureText(word).width;
+                    const getF = (i) => (fontSelect.value === 'random') ? fontList[i % fontList.length] : fontSelect.value;
+                    let spacing = 80;
+                    let totalW = 0;
+                    const measureTotal = () => {
+                        totalW = 0;
+                        wordSlice.forEach((w, i) => {
+                            ctx.font = `900 ${baseFontSize * ( (startAt + i === wordIdx) ? 1.2 : 1.0)}px ${getF(startAt + i)}`;
+                            totalW += ctx.measureText(w).width;
                         });
-                        return total + (80 * (wordSlice.length - 1));
+                        totalW += (wordSlice.length - 1) * spacing;
                     };
-
-                    let maxWidth = canvas.width * 0.9;
-                    let totalWidth = calculateTotalWidth(baseFontSize);
-                    while (totalWidth > maxWidth && baseFontSize > 30) {
-                        baseFontSize -= 5;
-                        totalWidth = calculateTotalWidth(baseFontSize);
+                    measureTotal();
+                    const maxAllowedWidth = canvas.width * 0.92;
+                    if (totalW > maxAllowedWidth) {
+                        const factor = maxAllowedWidth / totalW;
+                        baseFontSize *= factor;
+                        spacing *= factor;
+                        measureTotal();
                     }
-
-                    let xPos = (canvas.width - totalWidth) / 2;
+                    let x = Math.max(canvas.width * 0.04, (canvas.width - totalW) / 2);
                     wordSlice.forEach((word, i) => {
-                        const absoluteIdx = startIndex + i;
-                        const isHigh = (absoluteIdx === currentWordIdx);
-                        const wordColor = isHigh ? ((selStyle === 'mix') ? colors[absoluteIdx % colors.length] : selStyle) : "#FFFFFF";
-                        const wordFont = getWordFont(absoluteIdx);
-                        ctx.font = `900 ${baseFontSize * (isHigh ? 1.2 : 1.0)}px ${wordFont}`;
-                        const currentWordWidth = ctx.measureText(word).width;
-                        draw3D(word, xPos, canvas.height/2, wordColor, wordFont, isHigh, baseFontSize);
-                        xPos += currentWordWidth + 80;
+                        const absIdx = startAt + i;
+                        const isH = (absIdx === wordIdx);
+                        const c = getFinalColors(absIdx, isH);
+                        const f = getF(absIdx);
+                        ctx.font = `900 ${baseFontSize * (isH ? 1.2 : 1.0)}px ${f}`;
+                        const wWidth = ctx.measureText(word).width;
+                        draw3D(word, x, canvas.height/2, c.fill, c.stroke, f, isH, baseFontSize);
+                        x += wWidth + spacing;
                     });
                 }
             }
-
             if (!audio.ended) requestAnimationFrame(renderLoop);
             else recorder.stop();
         }

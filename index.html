@@ -229,9 +229,18 @@
                         <option value="random">★ RANDOM LAYOUT</option>
                     </select>
                 </div>
+                <!-- ADDED NEW SUBTITLE POSITION OPTION HERE -->
+                <div class="flex-col">
+                    <label>9. Subtitle Position:</label>
+                    <select id="subPosSelect">
+                        <option value="middle">Middle (Center)</option>
+                        <option value="top">Top</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
             </div>
 
-            <label>9. Audio & Text Files:</label>
+            <label>10. Audio & Text Files:</label>
             <input type="file" id="audioIn" accept="audio/*">
             <input type="file" id="textIn" accept=".txt">
         </div>
@@ -259,6 +268,7 @@
     const ctx = canvas.getContext('2d');
     const audioInput = document.getElementById('audioIn');
     const textInput = document.getElementById('textIn');
+    const subPosSelect = document.getElementById('subPosSelect');
     
     const fontList = ["'Noto Sans Odia'", "Samaleswari", "Banita", "Kapila", "Konark"];
     
@@ -334,7 +344,6 @@
 
     document.getElementById('bgTypeSelect').onchange = (e) => {
         document.getElementById('bgFileContainer').style.display = e.target.value === 'image' ? 'block' : 'none';
-        // Note: Preview background logic removed to keep it Gray
     };
 
     document.getElementById('bgImgIn').onchange = (e) => {
@@ -436,6 +445,11 @@
 
             const active = timings.find(t => now >= t.start && now <= t.end);
             if (active) {
+                // Calculate vertical Y position based on selection
+                let yPos = canvas.height / 2;
+                if (subPosSelect.value === 'top') yPos = canvas.height * 0.25;
+                if (subPosSelect.value === 'bottom') yPos = canvas.height * 0.80;
+
                 let subType = (subTypeSelect.value === 'random') ? (active.index % 3) + 2 : parseInt(subTypeSelect.value);
                 let baseFontSize = (ratioSelect.value === "9:16") ? 130 : (subType === 1 ? 220 : 165);
                 const progress = (now - active.start) / (active.end - active.start);
@@ -471,7 +485,7 @@
                         const f = getF(absIdx);
                         ctx.font = `900 ${baseFontSize * (isH ? 1.2 : 1.0)}px ${f}`;
                         const wWidth = ctx.measureText(word).width;
-                        draw3D(word, x, canvas.height/2, c.fill, c.stroke, f, isH, baseFontSize);
+                        draw3D(word, x, yPos, c.fill, c.stroke, f, isH, baseFontSize);
                         x += wWidth + spacing;
                     });
                 }
